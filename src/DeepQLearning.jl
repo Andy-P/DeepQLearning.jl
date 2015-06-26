@@ -1,5 +1,8 @@
 module DeepQLearning
 
-# package code goes here
+using NNGraph
+
+export DQN, forward, act, learn
+include("dqn.jl")
 
 end # module
