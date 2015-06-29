@@ -31,7 +31,7 @@ type DQN
     lastG::Graph
     solver::Solver
     function DQN(numStates::Int64, numHidden::Int64, numActions::Int64;
-                 std=0.01, gamma=0.75, epsilon=0.1, alpha=0.01, errorClamp=1.0,
+                 std=0.01, gamma=0.75, epsilon=0.1, alpha=0.01, errorClamp=10.0,
                  expSize=5000, expAddProb=0.05, expLearn=10)
 
         matrices = Array(NNMatrix, 0) # reference to matrices used by solver
@@ -65,10 +65,11 @@ function learnFromTuple(m::DQN, s0::NNMatrix, a0::Int64, r0::Float64, s1::NNMatr
     qmax = r0 + m.gamma * tmat.w[indmax(tmat.w)]
 
     pred = forward(m, s0, true)
-#     println((a0, indmax(tmat.w), indmax(pred.w),size(pred.w)))
     tdError = pred.w[a0,1] - qmax
-    tdError = minimum([maximum([tdError,-m.errorClamp]),m.errorClamp]) # huber loss to robustify
-    pred.dw[a0] = tdError
+
+    tdErrorClamp = minimum([maximum([tdError,-m.errorClamp]),m.errorClamp]) # huber loss to robustify
+#     if rand() < 0.00001 println((r0, a0, indmax(tmat.w), indmax(pred.w),qmax, tdError, tdErrorClamp)) end
+    pred.dw[a0] = tdErrorClamp
     backprop(m.lastG)
 #     solverstats = step(m.solver, m.matrices, m.alpha, 1e-06, m.errorClamp)
 
@@ -79,7 +80,7 @@ function learnFromTuple(m::DQN, s0::NNMatrix, a0::Int64, r0::Float64, s1::NNMatr
             mat.dw[i,j] = 0
         end
     end
-    return tdError
+    return tdErrorClamp
 end
 
 function learn(m::DQN, s0::NNMatrix, a0::Int64, r0::Float64, s1::NNMatrix)
