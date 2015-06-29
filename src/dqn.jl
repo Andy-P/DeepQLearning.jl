@@ -31,8 +31,8 @@ type DQN
     lastG::Graph
     solver::Solver
     function DQN(numStates::Int64, numHidden::Int64, numActions::Int64;
-                 std=0.01, gamma=0.75, epsilon=0.5, alpha=0.01, errorClamp=2.0,
-                 expSize=5000, expAddProb=0.2, expLearn=10)
+                 std=0.01, gamma=0.75, epsilon=0.1, alpha=0.01, errorClamp=1.0,
+                 expSize=5000, expAddProb=0.05, expLearn=10)
 
         matrices = Array(NNMatrix, 0) # reference to matrices used by solver
         w1 = randNNMat(numHidden,  numStates, std);  push!(matrices, w1)
@@ -46,19 +46,17 @@ type DQN
     end
 end
 
-function forward(m::DQN,s::NNMatrix, doBP::Bool=false)
-    g = Graph(false)
+function forward(m::DQN, s::NNMatrix, doBP::Bool=false)
+    g = Graph(doBP)
     h0 =  add(g, mul(g, m.w1, s), m.b1)
-    hd = NNGraph.tanh(g, h0) # hidden state
-    a = add(g, mul(g, m.w2, h0), m.b2) # action vector
+    hd = tanh(g, h0) # hidden state
+    a = add(g, mul(g, m.w2, hd), m.b2) # action vector
     m.lastG = g
     return a
 end
 
-function act(m::DQN,s::NNMatrix)
-    a = rand()<=m.epsilon? rand(1:m.numActions):indmax(forward(m,s,false).w)
-    m.s0 = m.s1; m.a0 = m.a1 # shift old state/action pair
-    m.s1 = s;  m.a1 = a # record new state/action pair
+function act(m::DQN, s::NNMatrix)
+    a = rand()<=m.epsilon? rand(1:m.numActions):indmax(forward(m, s, false).w)
     return a # return selected action
 end
 
@@ -67,12 +65,12 @@ function learnFromTuple(m::DQN, s0::NNMatrix, a0::Int64, r0::Float64, s1::NNMatr
     qmax = r0 + m.gamma * tmat.w[indmax(tmat.w)]
 
     pred = forward(m, s0, true)
-#     println((a0, indmax(tmat.w), size(pred.w)))
+#     println((a0, indmax(tmat.w), indmax(pred.w),size(pred.w)))
     tdError = pred.w[a0,1] - qmax
     tdError = minimum([maximum([tdError,-m.errorClamp]),m.errorClamp]) # huber loss to robustify
     pred.dw[a0] = tdError
     backprop(m.lastG)
-    # solverstats = step(m.solver, m.matrices, m.alpha, 1e-06, m.errorClamp)
+#     solverstats = step(m.solver, m.matrices, m.alpha, 1e-06, m.errorClamp)
 
     for k = 1:length(m.matrices)
         @inbounds mat = m.matrices[k] # mat ref
@@ -84,29 +82,26 @@ function learnFromTuple(m::DQN, s0::NNMatrix, a0::Int64, r0::Float64, s1::NNMatr
     return tdError
 end
 
-function learn(m::DQN, r1::Float64)
+function learn(m::DQN, s0::NNMatrix, a0::Int64, r0::Float64, s1::NNMatrix)
 
-    if m.alpha > 0 && m.r0 != typemin(Float64) && m.a0 != 0
-        tdError = learnFromTuple(m, m.s0, m.a0, m.r0, m.s1)
+    tdError = learnFromTuple(m, s0, a0, r0, s1)
 
-        if rand() <=  m.expAddProb
-            m.expCnt = m.expCnt >= m.expSize? 1 : m.expCnt + 1
-#             println( m.expCnt)
-            if length(m.experiences) < m.expSize
-                push!(m.experiences,Experience(m.s0, m.a0, m.r0, m.s1))
-            else
-                m.experiences[m.expCnt] = Experience(m.s0, m.a0, m.r0, m.s1)
-            end
-        end
-
-        #　memory replay
-        len = length(m.experiences)
-        for i = 1:min(len,m.expLearn)
-            r = rand(1:len)
-            exp = m.experiences[r]
-            err = learnFromTuple(m, exp.s0, exp.a0, exp.r0, exp.s1)
+    if rand() <=  m.expAddProb
+        m.expCnt = m.expCnt >= m.expSize? 1 : m.expCnt + 1
+        if length(m.experiences) < m.expSize
+            push!(m.experiences,Experience(s0, a0, r0, s1))
+        else
+            m.experiences[m.expCnt] = Experience(s0, a0, r0, s1)
         end
     end
 
-    m.r0 = r1
+    #　memory replay
+    len = length(m.experiences)
+    for i = 1:min(len,m.expLearn)
+        r = rand(1:len)
+        exp = m.experiences[r]
+        err = learnFromTuple(m, exp.s0, exp.a0, exp.r0, exp.s1)
+    end
+
+    return tdError
 end
