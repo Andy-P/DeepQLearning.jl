@@ -32,7 +32,7 @@ type DQN
     solver::Solver
     function DQN(numStates::Int64, numHidden::Int64, numActions::Int64;
                  std=0.01, gamma=0.75, epsilon=0.1, alpha=0.01, errorClamp=10.0,
-                 expSize=5000, expAddProb=0.05, expLearn=10)
+                 expSize=5000, expAddProb=0.05, expLearn=5    )
 
         matrices = Array(NNMatrix, 0) # reference to matrices used by solver
         w1 = randNNMat(numHidden,  numStates, std);  push!(matrices, w1)
