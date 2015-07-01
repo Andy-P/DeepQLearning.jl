@@ -31,7 +31,7 @@ type DQN
     lastG::Graph
     solver::Solver
     function DQN(numStates::Int64, numHidden::Int64, numActions::Int64;
-                 std=0.02, gamma=0.75, epsilon=0.1, alpha=0.00001, errorClamp=2.0,
+                 std=0.02, gamma=0.75, epsilon=0.1, alpha=0.00001, errorClamp=5.0,
                  expSize=5000, expAddProb=0.05, expLearn=5)
 
         matrices = Array(NNMatrix, 0) # reference to matrices used by solver
@@ -71,15 +71,15 @@ function learnFromTuple(m::DQN, s0::NNMatrix, a0::Int64, r0::Float64, s1::NNMatr
     tdErrorClamp = minimum([maximum([tdError,-m.errorClamp]),m.errorClamp]) # huber loss to robustify
     pred.dw[a0,1] = tdErrorClamp
     backprop(m.lastG)
-#     solverstats = step(m.solver, m.matrices, m.alpha, 1e-06, m.errorClamp)
+    solverstats = step(m.solver, m.matrices, m.alpha, 1e-06, m.errorClamp)
 
-    for k = 1:length(m.matrices)
-        @inbounds mat = m.matrices[k] # mat ref
-        @inbounds for j = 1:mat.d, i = 1:mat.n
-            mat.w[i,j] += - m.alpha * mat.dw[i]
-            mat.dw[i,j] = 0
-        end
-    end
+#     for k = 1:length(m.matrices)
+#         @inbounds mat = m.matrices[k] # mat ref
+#         @inbounds for j = 1:mat.d, i = 1:mat.n
+#             mat.w[i,j] += - m.alpha * mat.dw[i]
+#             mat.dw[i,j] = 0
+#         end
+#     end
     return tdErrorClamp
 end
 
