@@ -14,7 +14,7 @@ using DeepQLearning
 This library requires [NNGraph.jl](https://github.com/Andy-P/NNGraph.jl). 
 
 ##Credits
-This library draws on the work of [Andrej Karpathy](https://github.com/karpathy). 
+This library draws on the work of [Andrej Karpathy](https://github.com/karpathy/reinforcejs)
 
 ## License
 MIT
