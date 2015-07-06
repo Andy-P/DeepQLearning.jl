@@ -1,5 +1,5 @@
 # DeepQLearning.jl
-Julia implementation of DeepMind's Deep Q Learning algorithm described in "Playing Atari with Deep Reinforcement Learning"
+Julia implementation of DeepMind's Deep Q-Learning algorithm as described in [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)
 
 *note: This library seems to be working correctly on various learning task, but is not yet ready for public consumptions.*
 
