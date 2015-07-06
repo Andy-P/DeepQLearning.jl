@@ -1,5 +1,5 @@
 # DeepQLearning.jl
-Julia implementation of DeepMind's Deep Q-Learning algorithm as described in [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602)
+Julia implementation of DeepMind's Deep Q-Learning algorithm as described in [Playing Atari with Deep Reinforcement Learning](http://arxiv.org/abs/1312.5602). Information on the original [RecurrenJS DQN can be found here](http://cs.stanford.edu/people/karpathy/reinforcejs/waterworld.html)
 
 *note: This library seems to be working correctly on various learning tasks, but is not yet ready for public consumption.*
 
